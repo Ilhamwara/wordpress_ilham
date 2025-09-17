@@ -9,3 +9,6 @@
 # Login Admin Panel
 Username : admin <br>
 Password : ADMINWORDPRESS123
+
+# Akses Page
+1. untuk akses halaman event bisa masuk dengan url /events

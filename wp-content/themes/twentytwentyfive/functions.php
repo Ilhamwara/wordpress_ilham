@@ -8,6 +8,48 @@
  * @subpackage Twenty_Twenty_Five
  * @since Twenty Twenty-Five 1.0
  */
+function upcoming_events() {
+    $args = array(
+        'post_type'      => 'event',
+        'posts_per_page' => 3,
+        'orderby'        => 'meta_value',
+        'meta_key'       => 'event_datetime',
+        'order'          => 'ASC',
+        'meta_query'     => array(
+            array(
+                'key'     => 'event_datetime',
+                'value'   => current_time('Y-m-d H:i:s'),
+                'compare' => '>',
+                'type'    => 'DATETIME'
+            ),
+        ),
+    );
+
+    $events = new WP_Query($args);
+
+    ob_start();
+
+    if ($events->have_posts()) {
+        echo '<div class="upcoming-events">';
+        echo '<ul>';
+        while ($events->have_posts()) {
+            $events->the_post();
+            $date = get_post_meta(get_the_ID(), 'event_datetime', true);
+            echo '<li class="event-item">';
+            echo '<a href="' . get_permalink() . '">' . get_the_title() . '</a>';
+            echo '<span class="event-date"> - ' . date('d M Y H:i', strtotime($date)) . '</span>';
+            echo '</li>';
+        }
+        echo '</ul>';
+        echo '</div>';
+    } else {
+        echo '<p>Tidak ada event terdekat.</p>';
+    }
+
+    wp_reset_postdata();
+    return ob_get_clean();
+}
+add_shortcode('upcoming_events', 'upcoming_events');
 
 // Adds theme support for post formats.
 if ( ! function_exists( 'twentytwentyfive_post_format_setup' ) ) :
@@ -23,6 +65,11 @@ if ( ! function_exists( 'twentytwentyfive_post_format_setup' ) ) :
 	}
 endif;
 add_action( 'after_setup_theme', 'twentytwentyfive_post_format_setup' );
+add_action('after_setup_theme', function () {
+  register_nav_menus([
+    'primary' => __('Primary Menu', 'twentytwentyfive'),
+  ]);
+});
 
 // Enqueues editor-style.css in the editors.
 if ( ! function_exists( 'twentytwentyfive_editor_style' ) ) :
@@ -156,3 +203,25 @@ if ( ! function_exists( 'twentytwentyfive_format_binding' ) ) :
 		}
 	}
 endif;
+
+// Custom Event
+if ( ! function_exists( 'custom_post_type_event' ) ) :
+function custom_post_type_event() {
+    register_post_type('event', array(
+        'labels' => array(
+            'name' => __('Events'),
+            'singular_name' => __('Event')
+        ),
+        'public' => true,
+        'has_archive' => true, // <- penting
+        'rewrite' => array('slug' => 'events'), // <- slug archive
+        'show_in_rest' => true,
+        'supports' => array('title','editor','thumbnail','excerpt')
+    ));
+}
+add_action('init', 'custom_post_type_event');
+endif;
+
+// add_action('init', function() {
+//     flush_rewrite_rules();
+// });
